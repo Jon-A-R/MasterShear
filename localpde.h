@@ -687,7 +687,7 @@ void ElementEquation_UTT(
 
   dzvalues_.resize(n_q_points, Vector<double>(4));
   dzgrads_.resize(n_q_points, vector<Tensor<1, 2>>(4));
-  edc.GetValuesState("adjoint_hessian", dzvalues_);
+  edc.GetValuesState("adjoint_hessian", dzvalues_); //This could be last newton solution like in OPT Instat Example 4
   edc.GetGradsState("adjoint_hessian", dzgrads_);
 
   edc.GetValuesState("last_time_solution", last_timestep_uvalues_);
