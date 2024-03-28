@@ -353,13 +353,13 @@ public:
     if (this->GetTime() > 0.001)
     {
       decompose_stress(zstress_term_plus, zstress_term_minus,
-                       zE, ztr_E, zero_matrix, 0.0,
+                       E, tr_E, zE, ztr_E,
                        lame_coefficient_lambda_,
                        lame_coefficient_mu_, true); // true as z terms only appear in deriv sigma not in sigma itself
     }
     else
     {
-      zstress_term_plus = stress_term;
+      zstress_term_plus = zstress_term;
       zstress_term_minus = 0;
     }
 
@@ -436,7 +436,7 @@ ElementEquation_UT(
   ugrads_.resize(n_q_points, vector<Tensor<1, 2>>(4));
   last_timestep_uvalues_.resize(n_q_points, Vector<double>(4));
 
-  edc.GetValuesState("last_newton_solution", uvalues_); //TODO Both uvalues and duvalues being last newton solution probably makes no sense? Maybe uvalues rather state? du is last... in most examples
+  edc.GetValuesState("state", uvalues_); 
 
   duvalues_.resize(n_q_points, Vector<double>(4));
   dugrads_.resize(n_q_points, vector<Tensor<1, 2>>(4));
@@ -650,7 +650,7 @@ ElementEquation_UT(
             if (fabs(state_fe_values[multiplier].value(j, q_point) - 1.) < std::numeric_limits<double>::epsilon())
             {
               // From Equation
-              local_vector(j) += scale * weight * duPf * state_fe_values[multiplier].value(i, q_point); // TODO just think about this again lol
+              local_vector(j) += scale * weight * duPf * state_fe_values[multiplier].value(i, q_point); // TODO just think about this again
             }
           }
         }
@@ -808,13 +808,13 @@ void ElementEquation_UTT(
     if (this->GetTime() > 0.001)
     {
       decompose_stress(dzstress_term_plus, dzstress_term_minus,
-                       dzE, dztr_E, zero_matrix, 0.0,
+                       E, tr_E, dzE, dztr_E,
                        lame_coefficient_lambda_,
                        lame_coefficient_mu_, true); // true as dz terms only appear in deriv sigma not in sigma itself
     }
     else
     {
-      dzstress_term_plus = stress_term;
+      dzstress_term_plus = dzstress_term;
       dzstress_term_minus = 0;
     }
 
@@ -989,13 +989,13 @@ void ElementEquation_UU(
     if (this->GetTime() > 0.001)
     {
       decompose_stress(zstress_term_plus, zstress_term_minus,
-                       zE, ztr_E, zero_matrix, 0.0,
+                       E, tr_E, zE, ztr_E,
                        lame_coefficient_lambda_,
                        lame_coefficient_mu_, true); // true as z components only appear in deriv sigma
     }
     else
     {
-      zstress_term_plus = stress_term;
+      zstress_term_plus = zstress_term;
       zstress_term_minus = 0;
     }
 
