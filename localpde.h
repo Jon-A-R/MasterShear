@@ -436,12 +436,11 @@ ElementEquation_UT(
   ugrads_.resize(n_q_points, vector<Tensor<1, 2>>(4));
   last_timestep_uvalues_.resize(n_q_points, Vector<double>(4));
 
-  edc.GetValuesState("last_newton_solution", uvalues_);
-  edc.GetGradsState("last_newton_solution", ugrads_);
+  edc.GetValuesState("last_newton_solution", uvalues_); //TODO Both uvalues and duvalues being last newton solution probably makes no sense? Maybe uvalues rather state? du is last... in most examples
 
   duvalues_.resize(n_q_points, Vector<double>(4));
   dugrads_.resize(n_q_points, vector<Tensor<1, 2>>(4));
-  edc.GetValuesState("last_newton_solution", duvalues_);
+  edc.GetValuesState("last_newton_solution", duvalues_); 
   edc.GetGradsState("last_newton_solution", dugrads_);
 
   edc.GetValuesState("last_time_solution", last_timestep_uvalues_);
