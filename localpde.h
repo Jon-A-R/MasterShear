@@ -385,8 +385,7 @@ public:
       // only in vertices, so we check whether one of the
       // lambda test function
       //  is one (i.e. we are in a vertex)
-      if (
-          (fabs(state_fe_values[multiplier].value(i, q_point) - 1.) < std::numeric_limits<double>::epsilon()))
+      if (abs(state_fe_values[multiplier].value(i, q_point) - 1.) < std::numeric_limits<double>::epsilon())
       {
         // Weight to account for multiplicity when running over multiple meshes.
         unsigned int n_neig = edc.GetNNeighbourElementsOfVertex(state_fe_values.quadrature_point(q_point));
@@ -397,15 +396,21 @@ public:
           // max = 0
           if ((uvalues_[q_point][3] + s_ * (pf - old_timestep_pf)) <= 0.)
           {
-            local_vector(i) += scale * weight * state_fe_values[multiplier].value(i, q_point) * zMult;
+            local_vector(i) += scale * weight * zMult;
           }
           else // max > 0
           {
             // From Complementarity
-            local_vector(i) -= scale * weight * s_ * zPf * state_fe_values[multiplier].value(i, q_point);
+            for (unsigned int j = 0; j < n_dofs_per_element; j++) 
+            {
+                                if (fabs(state_fe_values[phasefield].value(j, q_point) - 1.) < std::numeric_limits<double>::epsilon()) 
+                                {
+                                    local_vector(j) -= scale * weight * s_ * zPf;
+                                }
+            }
           }
           // From Equation
-          local_vector(i) += scale * weight * state_fe_values[phasefield].value(i, q_point) * zMult;
+          local_vector(i) += scale * weight * zMult;
         }
         else // Boundary or hanging node no weight so it works when hanging
         {
@@ -642,15 +647,15 @@ ElementEquation_UT(
           else // max > 0
           {
             // From Complementarity
-            local_vector(i) -= scale * weight * s_ * state_fe_values[phasefield].value(i, q_point) * duMult;
+            local_vector(i) -= scale * weight * s_ * duMult;
           }
 
           for (unsigned int j = 0; j < n_dofs_per_element; j++)
           {
-            if (fabs(state_fe_values[multiplier].value(j, q_point) - 1.) < std::numeric_limits<double>::epsilon())
+            if (fabs(state_fe_values[phasefield].value(j, q_point) - 1.) < std::numeric_limits<double>::epsilon())
             {
               // From Equation
-              local_vector(j) += scale * weight * duPf * state_fe_values[multiplier].value(i, q_point); // TODO just think about this again
+              local_vector(j) += scale * weight * duPf; 
             }
           }
         }
@@ -857,7 +862,13 @@ void ElementEquation_UTT(
           else // max > 0
           {
             // From Complementarity
-            local_vector(i) -= scale * weight * s_ * dzPf * state_fe_values[multiplier].value(i, q_point);
+            for (unsigned int j = 0; j < n_dofs_per_element; j++)
+            {
+              if (fabs(state_fe_values[phasefield].value(j, q_point) - 1.) < std::numeric_limits<double>::epsilon())
+              {
+                local_vector(j) -= scale * weight * s_ * dzPf;
+              }
+            }
           }
           // From Equation
           local_vector(i) += scale * weight * state_fe_values[phasefield].value(i, q_point) * dzMult;
