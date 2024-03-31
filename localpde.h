@@ -375,7 +375,7 @@ public:
       local_vector(i) += scale * (
                                      // Main terms
                                      (1 - constant_k_) * (scalar_product(zstress_term_plus, E) + scalar_product(stress_term_plus, zE)) * pf * phi_pf[i] // du
-                                     + (1 - constant_k_) * scalar_product(stress_term_plus, E) * phi_pf[i] * zPf                                        // d phi
+                                     + (1 - constant_k_) * scalar_product(stress_term_plus, E) * phi_pf[i]                                              // d phi
                                      + qvalues_[0] / (alpha_eps_)*phi_pf[i] * zPf                                                                       // d phi
                                      + qvalues_[0] * alpha_eps_ * phi_grads_pf[i] * grad_zPf                                                            // d phi
                                      ) *
@@ -396,7 +396,7 @@ public:
           // max = 0
           if ((uvalues_[q_point][3] + s_ * (pf - old_timestep_pf)) <= 0.)
           {
-            local_vector(i) += scale * weight * zMult;
+            local_vector(i) += scale * weight * zMult * state_fe_values[multiplier].value(i, q_point);
           }
           else // max > 0
           {
@@ -405,12 +405,12 @@ public:
             {
                                 if (fabs(state_fe_values[phasefield].value(j, q_point) - 1.) < std::numeric_limits<double>::epsilon()) 
                                 {
-                                    local_vector(j) -= scale * weight * s_ * zPf;
-                                }
+                                    local_vector(j) += scale * weight * s_ * zMult * state_fe_values[phasefield].value(j, q_point);
+                                } 
             }
           }
           // From Equation
-          local_vector(i) += scale * weight * zMult;
+          local_vector(i) += scale * weight * zPf * state_fe_values[multiplier].value(i, q_point);
         }
         else // Boundary or hanging node no weight so it works when hanging
         {
@@ -692,8 +692,8 @@ void ElementEquation_UTT(
 
   dzvalues_.resize(n_q_points, Vector<double>(4));
   dzgrads_.resize(n_q_points, vector<Tensor<1, 2>>(4));
-  edc.GetValuesState("adjoint_hessian", dzvalues_); //This could be last newton solution like in OPT Instat Example 4
-  edc.GetGradsState("adjoint_hessian", dzgrads_);
+  edc.GetValuesState("last_newton_solution", dzvalues_); 
+  edc.GetGradsState("last_newton_solution", dzgrads_);
 
   edc.GetValuesState("last_time_solution", last_timestep_uvalues_);
 
