@@ -365,34 +365,21 @@ main(int argc, char **argv)
   //Changed
   RNA Alg(&P, &solver, pr);
   ControlVector<VECTOR> q(&DOFH, DOpEtypes::VectorStorageType::fullmem,pr);
-  q = 2.0;
+  q = 10.0;
   Alg.ReInit();
   
   //**************************************************************************************************
  
   try
     {
-    /*******
-      //Before solving we have to reinitialize the stateproblem and outputhandler.
-      solver.ReInit();
-      out.ReInit();
-
-      stringstream outp;
-      outp << "**************************************************\n";
-      outp << "*             Starting Forward Solve             *\n";
-      outp << "*   Solving : " << P.GetName() << "\t*\n";
-      outp << "*   SDoFs   : ";
-      solver.StateSizeInfo(outp);
-      outp << "**************************************************";
-      //We print this header with priority 1 and 1 empty line in front and after.
-      out.Write(outp, 1, 1, 1);
-
-      //We compute the value of the functionals. To this end, we have to solve
-      //the PDE at hand.
-      solver.ComputeReducedFunctionals();
-      *****/
-      Alg.Solve(q);
-
+      //Alg.Solve(q);
+      
+      
+      ControlVector<VECTOR> dq(q);
+      const double eps_diff = 1.0e-2;
+      Alg.CheckGrads(eps_diff, q, dq, 4);
+      //Alg.CheckHessian(eps_diff, q, dq, 2);
+      
     }
   catch (DOpEException &e)
     {

@@ -365,19 +365,45 @@ public:
 
     for (unsigned int i = 0; i < n_dofs_per_element; i++)
     {
+      const Tensor<2, 2> E_LinU = 0.5 * (phi_grads_u[i] + transpose(phi_grads_u[i])); 
+
+      const double tr_E_LinU = trace(E_LinU);
+
+      Tensor<2, 2> stress_term_LinU;
+      stress_term_LinU = lame_coefficient_lambda_ * tr_E_LinU * Identity + 2 * lame_coefficient_mu_ * E_LinU;
+
+      Tensor<2, 2> stress_term_plus_LinU;
+      Tensor<2, 2> stress_term_minus_LinU;
+
+      // Necessary because stress splitting does not work
+      // in the very initial time step.
+      if (this->GetTime() > 0.001)
+      {
+        decompose_stress(stress_term_plus_LinU, stress_term_minus_LinU,
+                         E, tr_E, E_LinU, tr_E_LinU,
+                         lame_coefficient_lambda_,
+                         lame_coefficient_mu_,
+                         true); // true, since FE members only appear in derivatives of sigma
+      }
+      else
+      {
+        stress_term_plus_LinU = stress_term_LinU;
+        stress_term_minus_LinU = 0;
+      }
+    
       // Solid (time-lagged version)
-      local_vector(i) += scale * (scalar_product(((1 - constant_k_) * old_timestep_pf * old_timestep_pf + constant_k_) * zstress_term_plus, phi_grads_u[i]) // du
-                                  + scalar_product(zstress_term_minus, phi_grads_u[i])                                                                      // du
+      local_vector(i) += scale * (scalar_product(((1 - constant_k_) * old_timestep_pf * old_timestep_pf + constant_k_) * stress_term_plus_LinU, grad_zDisp) // du
+                                  + scalar_product(stress_term_minus_LinU, zE)                                                                      // du
                                   ) *
                          state_fe_values.JxW(q_point);
 
       // Phase-field
       local_vector(i) += scale * (
                                      // Main terms
-                                     (1 - constant_k_) * (scalar_product(zstress_term_plus, E) + scalar_product(stress_term_plus, zE)) * pf * phi_pf[i] // du
-                                     + (1 - constant_k_) * scalar_product(stress_term_plus, E) * phi_pf[i]                                              // d phi
-                                     + qvalues_[0] / (alpha_eps_)*phi_pf[i] * zPf                                                                       // d phi
-                                     + qvalues_[0] * alpha_eps_ * phi_grads_pf[i] * grad_zPf                                                            // d phi
+                                     (1 - constant_k_) * (scalar_product(stress_term_plus_LinU, E) + scalar_product(stress_term_plus, E_LinU)) * pf * zPf // du
+                                     + (1 - constant_k_) * scalar_product(stress_term_plus, E) * phi_pf[i] * zPf                                          // d phi
+                                     + qvalues_[0] / (alpha_eps_)*phi_pf[i] * zPf                                                                         // d phi
+                                     + qvalues_[0] * alpha_eps_ * phi_grads_pf[i] * grad_zPf                                                             // d phi
                                      ) *
                          state_fe_values.JxW(q_point);
 
@@ -405,7 +431,7 @@ public:
             {
                                 if (fabs(state_fe_values[phasefield].value(j, q_point) - 1.) < std::numeric_limits<double>::epsilon()) 
                                 {
-                                    local_vector(j) += scale * weight * s_ * zMult * state_fe_values[phasefield].value(j, q_point);
+                                    local_vector(j) -= scale * weight * s_ * zMult * state_fe_values[phasefield].value(j, q_point); //TODO Don't forget the Vorzeichenänderung for the written work
                                 } 
             }
           }
@@ -647,7 +673,7 @@ ElementEquation_UT(
           else // max > 0
           {
             // From Complementarity
-            local_vector(i) -= scale * weight * s_ * duMult;
+            local_vector(i) -= scale * weight * s_ * duPf;
           }
 
           for (unsigned int j = 0; j < n_dofs_per_element; j++)
@@ -655,7 +681,7 @@ ElementEquation_UT(
             if (fabs(state_fe_values[phasefield].value(j, q_point) - 1.) < std::numeric_limits<double>::epsilon())
             {
               // From Equation
-              local_vector(j) += scale * weight * duPf; 
+              local_vector(j) += scale * weight * duMult; 
             }
           }
         }
@@ -825,16 +851,42 @@ void ElementEquation_UTT(
 
     for (unsigned int i = 0; i < n_dofs_per_element; i++)
     {
+      const Tensor<2, 2> E_LinU = 0.5 * (phi_grads_u[i] + transpose(phi_grads_u[i])); 
+
+      const double tr_E_LinU = trace(E_LinU);
+
+      Tensor<2, 2> stress_term_LinU;
+      stress_term_LinU = lame_coefficient_lambda_ * tr_E_LinU * Identity + 2 * lame_coefficient_mu_ * E_LinU;
+
+      Tensor<2, 2> stress_term_plus_LinU;
+      Tensor<2, 2> stress_term_minus_LinU;
+
+      // Necessary because stress splitting does not work
+      // in the very initial time step.
+      if (this->GetTime() > 0.001)
+      {
+        decompose_stress(stress_term_plus_LinU, stress_term_minus_LinU,
+                         E, tr_E, E_LinU, tr_E_LinU,
+                         lame_coefficient_lambda_,
+                         lame_coefficient_mu_,
+                         true); // true, since FE members only appear in derivatives of sigma
+      }
+      else
+      {
+        stress_term_plus_LinU = stress_term_LinU;
+        stress_term_minus_LinU = 0;
+      }
+      
       // Solid (time-lagged version)
-      local_vector(i) += scale * (scalar_product(((1 - constant_k_) * old_timestep_pf * old_timestep_pf + constant_k_) * dzstress_term_plus, phi_grads_u[i]) // du
-                                  + scalar_product(dzstress_term_minus, phi_grads_u[i])                                                                      // du
+      local_vector(i) += scale * (scalar_product(((1 - constant_k_) * old_timestep_pf * old_timestep_pf + constant_k_) * stress_term_plus_LinU, grad_dzDisp) // du
+                                  + scalar_product(stress_term_minus_LinU, dzE)                                                                      // du
                                   ) *
                          state_fe_values.JxW(q_point);
 
       // Phase-field
       local_vector(i) += scale * (
                                      // Main terms
-                                     (1 - constant_k_) * (scalar_product(dzstress_term_plus, E) + scalar_product(stress_term_plus, dzE)) * pf * phi_pf[i] // du
+                                     (1 - constant_k_) * (scalar_product(stress_term_plus_LinU, E) + scalar_product(stress_term_plus, E_LinU)) * pf * dzPf // du
                                      + (1 - constant_k_) * scalar_product(stress_term_plus, E) * phi_pf[i] * dzPf                                         // d phi
                                      + qvalues_[0] / (alpha_eps_)*phi_pf[i] * dzPf                                                                        // d phi
                                      + qvalues_[0] * alpha_eps_ * phi_grads_pf[i] * grad_dzPf                                                             // d phi
@@ -857,7 +909,7 @@ void ElementEquation_UTT(
           // max = 0
           if ((uvalues_[q_point][3] + s_ * (pf - old_timestep_pf)) <= 0.)
           {
-            local_vector(i) += scale * weight * state_fe_values[multiplier].value(i, q_point) * dzMult;
+            local_vector(i) += scale * weight * dzMult;
           }
           else // max > 0
           {
@@ -866,12 +918,12 @@ void ElementEquation_UTT(
             {
               if (fabs(state_fe_values[phasefield].value(j, q_point) - 1.) < std::numeric_limits<double>::epsilon())
               {
-                local_vector(j) -= scale * weight * s_ * dzPf;
+                local_vector(j) -= scale * weight * s_ * dzMult;
               }
             }
           }
           // From Equation
-          local_vector(i) += scale * weight * state_fe_values[phasefield].value(i, q_point) * dzMult;
+          local_vector(i) += scale * weight * dzPf;
         }
         else // Boundary or hanging node no weight so it works when hanging
         {

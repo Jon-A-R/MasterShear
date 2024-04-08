@@ -216,7 +216,7 @@ public:
   std::string
   GetName() const
   {
-    return "Cost-functional";
+    return "cost functional";
   }
 
 private:
