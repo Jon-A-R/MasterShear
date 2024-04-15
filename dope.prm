@@ -6,7 +6,6 @@ subsection Local PDE parameters
      	   set alpha_eps	= 2.0
 	   set lame_coefficient_mu	= 80.77e+3
 	   set lame_coefficient_lambda  = 121.15e+3
-	   set sigma			= 1.0
 end
 
 subsection Problem data parameters

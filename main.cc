@@ -20,6 +20,8 @@
  * for further information on this license.
  *
  **/
+ 
+ 
 
 //c++ includes
 #include <iostream>
@@ -116,8 +118,8 @@ typedef BlockVector<double> VECTOR;
 
 typedef FunctionalInterface<EDC, FDC, DOFHANDLER, VECTOR, CDIM, DIM> FUNC;
 
-#define TSP BackwardEulerProblem
-#define DTSP BackwardEulerProblem
+#define TSP CrankNicolsonProblem
+#define DTSP CrankNicolsonProblem
 
 typedef InstatOptProblemContainer<TSP, DTSP, FUNC,
         LocalFunctional<EDC, FDC, DOFHANDLER, VECTOR, CDIM, DIM>,
@@ -365,19 +367,18 @@ main(int argc, char **argv)
   //Changed
   RNA Alg(&P, &solver, pr);
   ControlVector<VECTOR> q(&DOFH, DOpEtypes::VectorStorageType::fullmem,pr);
-  q = 10.0;
+  q = 2.7;
   Alg.ReInit();
   
   //**************************************************************************************************
  
   try
     {
-      //Alg.Solve(q);
+      Alg.Solve(q);
       
-      
-      ControlVector<VECTOR> dq(q);
-      const double eps_diff = 1.0e-2;
-      Alg.CheckGrads(eps_diff, q, dq, 4);
+      //ControlVector<VECTOR> dq(q);
+      //const double eps_diff = 1.0e-2;
+      //Alg.CheckGrads(eps_diff, q, dq, 4);
       //Alg.CheckHessian(eps_diff, q, dq, 2);
       
     }
